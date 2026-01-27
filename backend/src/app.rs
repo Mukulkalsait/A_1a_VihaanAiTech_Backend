@@ -1,9 +1,14 @@
-use axum::{Router, routing::get};
+use axum::Router;
+use tower_http::trace::TraceLayer;
 
-pub fn create_app() -> Router {
-    Router::new().route("/health", get(health))
-}
+use crate::db::init_db;
+use crate::routes;
 
-async fn health() -> &'static str {
-    "OK"
+pub async fn creat_app() -> anyhow::Result<Router>{
+
+    let db = init_db().await?;
+
+    let app = Router::new().merge(routes::router()).with_state(db).layer(TraceLayer::new_for_http());
+
+    Ok(app)
 }

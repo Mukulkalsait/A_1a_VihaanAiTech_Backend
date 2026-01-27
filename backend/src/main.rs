@@ -1,19 +1,27 @@
-use axum::Router;
-use axum::routing::get;
-use tokio::net::TcpListener;
 
-// use dotenvy::dotenv;
-// use std::net::{SocketAddr, TcpListener};
-// use tracing_subscriber;
+mod app;
+mod config;
+mod db;
+mod routes;
+
+use axum::serve::Listener;
+use tokio::net::TcpListener;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() {
-    let app = Router::new().route("/", get(|| async { "Hello Axum 0.8.8 " }));
+async fn main() -> anyhow::Result<()>{
+    dotenvy::dotenv().ok();
 
-    let addr = "0.0.0.0:3000";
-    let listener = TcpListener::bind(addr).await.expect("Fail to bind address");
+    tracing_subscriber::registry().with(tracing_subscriber::EnvFilter::from_default_env()).with(tracing_subscriber::fmt::layer()).init();
 
-    println!("🚀 Service Running on http://{}", addr);
+    let app = app::create_app().await?;
 
-    axum::serve(listener, app).await.expect("Server Failed");
+    let addr = format!("0.0.0.0:{}",std::env::var("APP_PORT").unwrap_or("3000".into()));
+
+    let listener = TcpListener::bind(&addr).await?;
+    tracing::info!("⚡VAT Backend running on http://{}",addr);
+
+    axum::serve(listener,app).await?;
+
+    Ok(())
 }
