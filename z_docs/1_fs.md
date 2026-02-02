@@ -69,3 +69,10 @@ vihaanaigroup-backend/
 └── README.md
 
 ```
+
+
+# ORDER
+
+```bash 
+Config → Errors → DB Pool → App State → Routing → Handlers → Services → Models
+```
