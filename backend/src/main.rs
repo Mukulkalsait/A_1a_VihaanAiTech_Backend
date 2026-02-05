@@ -32,7 +32,7 @@ async fn main()->anyhow::Result<()>{
     // Y: await
     // G: So the function is paused till OS binds the port.
 
-    println!("⚡ VAT on http://localhost:3000");
+    println!("⚡ VAT on {}",&config.server_addr);
     axum::serve(listener,app).await?;
     // Serving requests is an async operation that never finishes (until shutdown) ➡  await
     // the .await? => shows errors which returns => so the funciton 
