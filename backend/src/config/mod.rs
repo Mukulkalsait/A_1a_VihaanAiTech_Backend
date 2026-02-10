@@ -10,6 +10,11 @@ pub struct AppConfig {
     pub jwt_secret:String,
 }
 
+// in impl we define fun, behavour, logic
+// IN RUST : we define.
+// struct => what data it has.
+// impl   => what it can do.
+
 impl AppConfig {
     pub fn from_env()->anyhow::Result<Self>{
         dotenvy::dotenv().ok();
