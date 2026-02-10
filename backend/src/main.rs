@@ -1,9 +1,11 @@
 
 mod app;
 mod config;
+mod errors;
 
 use tokio::net::TcpListener;
 use config::AppConfig;
+
 
 // Runtim entry
 #[tokio::main]
