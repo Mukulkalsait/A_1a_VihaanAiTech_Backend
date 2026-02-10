@@ -10,10 +10,11 @@ pub struct AppConfig {
     pub jwt_secret:String,
 }
 
-// in impl we define fun, behavour, logic
+//IMP: in impl we define fun, behavour, logic
+// ---
 // IN RUST : we define.
 // struct => what data it has.
-// impl   => what it can do.
+// impl   => what it can do. (implification.)
 
 impl AppConfig {
     pub fn from_env()->anyhow::Result<Self>{
