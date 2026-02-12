@@ -58,4 +58,3 @@ impl IntoResponse for ApiError {
 // so all we have to do is  Err(ApiError::Unauthorized) -> and it will work.
 //  axum will set http code -> stealise jsno -> send response no boilerplate.
 // --------------------------------------------------------------
-
