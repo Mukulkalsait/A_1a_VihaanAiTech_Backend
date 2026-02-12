@@ -10,8 +10,7 @@ pub fn build_app(config:AppConfig)-> Router{
     Router::new()
         .route("/health", get(health))
         .with_state(state)
-        .route("/appx", appx())
-
+        .route("/fail", get(test::fail))
 }
 
 async fn health()->&'static str{"ok"}
