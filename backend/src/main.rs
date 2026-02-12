@@ -2,8 +2,8 @@
 mod app;
 mod config;
 mod errors;
-
 mod handlers;
+mod app_state;
 
 use tokio::net::TcpListener;
 use config::AppConfig;
@@ -28,7 +28,7 @@ async fn main()->anyhow::Result<()>{
     let config=AppConfig::from_env()?;
 
 
-    let app = app::build_app(); //file app -> function build_app
+    let app = app::build_app(config.clone()); //file app -> function build_app
     let listener= TcpListener::bind(&config.server_addr).await?;
     // await can ONLY used on something that might take time. eg. Network, socket, timers, file I/O
     // listner say 'i need this port 👆', OS can say => {delay, fail, wait for other resources} ➡️ await.
