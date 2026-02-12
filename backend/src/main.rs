@@ -2,6 +2,7 @@
 mod app;
 mod config;
 mod errors;
+
 mod handlers;
 
 use tokio::net::TcpListener;
