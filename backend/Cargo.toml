@@ -1,33 +1,62 @@
 [package]
-name = "vihaanaigroup_backend"
+name = "backend"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# Web
-axum = "0.8.8"
-tokio = { version = "1", features = ["full"] }
-tower = "0.5"
-tower-http = { version = "0.6.8", features = ["cors", "trace"] }
 
-# Config
-dotenvy = "0.15"
 
-# Serialization
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# B:  WebServer
+axum = { version = "0.8.9", features = ["http2", "macros", "ws"] } # AXUM server
+tokio = { version = "1.52.0", features = ["full"] } # WEB SERVER
 
-# Database
-sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio-rustls", "macros"] }
+# Y:  Database
+sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio-rustls", "mysql"] }
 
-# Logging
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# IMP: Authentication
+reqwest = { version = "0.13.2", features = ["json", "rustls"] } 
+argon2 = "0.5.3" # Password Hashing
+chrono = "0.4.44" # DateTime
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] } 
 
-# Errors
-thiserror = "2"
-anyhow = "1"
+# R: Error Handling
+anyhow = "1.0.102" # gives anyhow to use " ?" early catching error
+thiserror = "2.0.18" # Define Personalised Errors.
 
-# Auth
-jsonwebtoken = { version = "10", features = ["rust_crypto"] }
-argon2 = "0.5"
+# G: Tools 
+dotenvy = "0.15.7" # to load .env configfile
+uuid = { version = "1.23.0", features = ["v4"] } # Uniquie id generateor
+serde = { version = "1.0.228", features = ["derive"] } # Serialization-DeSerialization
+serde_json = "1.0.149"
+
+
+
+
+# TAG: orignal # Web
+#
+# axum = "0.8.8"
+# tokio = { version = "1", features = ["full"] }
+# tower = "0.5"
+# tower-http = { version = "0.6.8", features = ["cors", "trace"] }
+#
+#
+# # Serialization
+# serde = { version = "1", features = ["derive"] }
+# serde_json = "1"
+#
+# # Database
+# sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio-rustls", "macros"] }
+# # sqlx = { version = "0.8.6", features = ["mysql", "runtime-tokio-rustls", "macros"] }
+#
+# # Logging
+# tracing = "0.1"
+# tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+#
+# # Errors
+# thiserror = "2"
+# anyhow = "1"
+#
+# # Auth
+# jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+# argon2 = "0.5"
+#
