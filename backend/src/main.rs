@@ -1,58 +1,46 @@
+use std;
+
+use tokio;
+// EXT---------------------
 
 mod app;
 mod config;
+// use crate::config::env::AppConfig;
+mod db;
 mod errors;
 mod handlers;
-mod app_state;
+mod utils;
+// INT---------------------
 
-use tokio::net::TcpListener;
-use config::AppConfig;
-
-
-// Runtim entry
 #[tokio::main]
-async fn main()->anyhow::Result<()>{
-// async => fu can PAUSE without blocking thread. 
-// 1.the function will pause in bg 2.other function will run 3.once it get everyting it will run.
-// use on -> Db, Network, Disk, Other services
-//
-// async fn -> when called => it does not run it creates a FUTURE.
-// a future is => state of mashine (Not started, waiting for something, Ready) => noting run unless someting polls it.
-// so who polls it? => here the line #[tokio::main] -> create EXICUTOR.
-// Exicutor => repetadly polls future, park task when waiting, wakes when ready.
-//
-//
-// Y: async
+/// RUNTIME ENTRY.
+/// anyhow::Resualt<()>
+/// resualt -> <Ok(), Err()> | But for generic type => (error? if yes type?)
+/// anyhow allow us to use ? early return. => give anyting to return as resualt.
+async fn main() -> anyhow::Result<()> {
+    let config = config::AppConfig::from_env()?;
+    let db = sqlx::sqlite::SqlitePoolOptions::new().max_connections(6).connect(&config.database_url).await?;
+    let app = app::build_app(config.clone(), db.clone());
 
+    db::init::init_db(&db).await?;
 
-    let config=AppConfig::from_env()?;
-
-
-    let app = app::build_app(config.clone()); //file app -> function build_app
-    let listener= TcpListener::bind(&config.server_addr).await?;
+    let listener = tokio::net::TcpListener::bind(&config.server_addr).await?;
     // await can ONLY used on something that might take time. eg. Network, socket, timers, file I/O
     // listner say 'i need this port 👆', OS can say => {delay, fail, wait for other resources} ➡️ await.
     // await suspends the current async task until the awaited future makes progress
     // Y: await
     // G: So the function is paused till OS binds the port.
 
-    println!("⚡ VAT on {}",&config.server_addr);
-    axum::serve(listener,app).await?;
-    // Serving requests is an async operation that never finishes (until shutdown) ➡  await
-    // the .await? => shows errors which returns => so the funciton 
-    // Y: await?
-    //
-    // will show error with help of main() -> anyhow::Resualt<()>
-    // Y: anyhow
+    println!("⚡ VAT on {}", &config.server_addr);
+    axum::serve(listener, app.into_make_service()).await?;
 
-    Ok(()) // when noting usefull to return.
-    
+    Ok(())
 }
-
-// ----------------------------------------------------------------------------|
-// We call TcpListener::bind(...) await? → returns a Future
-// We .await it → Tokio polls it
+//IMP:===============================| Info of Structs |=====================================================
 //
-// OS says: “Port not ready yet” or “I’m working”
-// Tokio: pauses this task | runs other tasks
-// OS signals completion => Tokio wakes this future .await returns TcpListener
+// 1. AppConfig (config/env) | envFileDetails.
+// 2. AppState (config + db)
+// 3. ApiError (Errors )
+// 4. /db/init db_init() | db_query  sqlx::query().exicute(pool).await?
+// 5. GoogleAuth
+// 6. App::build_app () -> Router |  Router::new .... (AppState)
