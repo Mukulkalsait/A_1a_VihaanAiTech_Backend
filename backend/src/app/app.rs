@@ -4,20 +4,22 @@ use axum::{Router, routing};
 use crate::app;
 use crate::app::AppState;
 use crate::config;
-use crate::handlers::user::list_user;
-use crate::handlers::{create_user, google_auth, test};
+use crate::handlers::{create_user, google_auth, list_user, me, test};
 
 //ENT
 
 pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Router {
     let state = AppState { config, db };
     Router::new()
-        .route("/a", routing::get(homepageurl))
-        .route("/fail", routing::get(test::fail))
+        .route("/home", routing::get(homepageurl))
+        // important
         .route("/auth/google", routing::post(google_auth::google_auth))
-        .route("/appx", routing::get(appx))
+        .route("/me", routing::get(me))
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
+        .route("/appx", routing::get(appx))
+        // fail
+        .route("/fail", routing::get(test::fail))
         .with_state(state)
 }
 
