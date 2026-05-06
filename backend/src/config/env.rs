@@ -1,3 +1,5 @@
+// FILE: ./src/config/env.rs
+
 use std::env;
 
 #[derive(Clone)]
@@ -36,10 +38,10 @@ impl AppConfig {
         let jwt_max_age = env::var("JWT_MAXAGE").map_err(|_| anyhow::anyhow!("JWT_MAXAGE not set."))?;
 
         let smtp_server = env::var("SMTP_SERVER").map_err(|_| anyhow::anyhow!("SMTP_SERVER not set."))?;
-        let smtp_port = env::var("SMPT_PORT").map_err(|_| anyhow::anyhow!("SMPT_PORT not set."))?;
-        let smtp_username = env::var("SMPT_USERNAME").map_err(|_| anyhow::anyhow!("SMPT_USERNAME not set."))?;
-        let smtp_pass = env::var("SMPT_PASS").map_err(|_| anyhow::anyhow!("SMPT_PASS not set."))?;
-        let smtp_from_address = env::var("SMPT_FROM_ADDRESS").map_err(|_| anyhow::anyhow!("SMPT_FROM_ADDRESS not set."))?;
+        let smtp_port = env::var("SMTP_PORT").map_err(|_| anyhow::anyhow!("SMTP_PORT not set."))?;
+        let smtp_username = env::var("SMTP_USERNAME").map_err(|_| anyhow::anyhow!("SMTP_USERNAME not set."))?;
+        let smtp_pass = env::var("SMTP_PASS").map_err(|_| anyhow::anyhow!("SMTP_PASS not set."))?;
+        let smtp_from_address = env::var("SMTP_FROM_ADDRESS").map_err(|_| anyhow::anyhow!("SMTP_FROM_ADDRESS not set."))?;
 
         Ok(Self {
             app_env,
