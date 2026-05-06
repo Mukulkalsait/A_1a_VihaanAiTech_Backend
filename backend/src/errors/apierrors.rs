@@ -1,3 +1,5 @@
+// FILE: ./src/errors/apierrors.rs
+
 use axum;
 use serde;
 use thiserror;
@@ -35,8 +37,8 @@ struct ErrorResponse {
 pub enum ApiError {
     #[error("unauthorized")]
     Unauthorized,
-    #[error("forbiden")]
-    Forbiden,
+    #[error("forbidden")]
+    Forbidden,
     #[error("resource not found")]
     NotFound,
     #[error("bad request: {0}")]
@@ -49,7 +51,7 @@ impl axum::response::IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         let (status, message) = match self {
             ApiError::Unauthorized => (axum::http::StatusCode::UNAUTHORIZED, self.to_string()),
-            ApiError::Forbiden => (axum::http::StatusCode::FORBIDDEN, self.to_string()),
+            ApiError::Forbidden => (axum::http::StatusCode::FORBIDDEN, self.to_string()),
             ApiError::NotFound => (axum::http::StatusCode::NOT_FOUND, self.to_string()),
             ApiError::BadRequest(msg) => (axum::http::StatusCode::BAD_REQUEST, msg),
             ApiError::Internal => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error".to_string()),
