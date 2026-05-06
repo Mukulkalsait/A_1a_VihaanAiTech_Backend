@@ -31,7 +31,7 @@ serde_json = "1.0.149"
 
 
 
-# Y:  EXTRAS
+# Y:  EXTRAS (we might use in future)
 # async-trais //  allow async on traits ( UESFULL )
 # axum-extra //  axum cookie handling
 # lettre // sending emails.
