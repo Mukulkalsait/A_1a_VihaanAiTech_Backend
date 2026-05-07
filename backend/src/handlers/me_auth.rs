@@ -24,6 +24,13 @@ use serde_json;
 /// ## WorkFlow Reason:
 ///  - Frontend already has token
 ///  - asks backend: "who is logged in?"
+///
+/// # CONCEPTS:
+/// JWT from frontend has 3 parts,
+///  1.Header | 2.Payload | 3.Signature
+///  - Signature => proof out backend created thsi tooken.
+///  - this is created by that EncodingKey::from_secret(...) in [jwt.rs](../utils/jwt.rs) file.
+///
 pub async fn me(
     axum::extract::State(state): axum::extract::State<app::AppState>,
     headers: axum::http::HeaderMap,
@@ -53,14 +60,16 @@ pub async fn me(
         "#,
         user_id
     )
-    .fetch_one(&state.db)
+    .fetch_optional(&state.db)
     .await
     .map_err(|_| ApiError::Internal)?;
 
+    let user = user.ok_or(ApiError::Unauthorized);
+
     Ok(axum::Json(serde_json::json!({
-        "id":user.id,
-        "email":user.user_email,
-        "name":user.user_first_name,
-        "picture":user.user_picture,
+        "id":user.as_ref().unwrap().id,
+        "email":user.as_ref().unwrap().user_email,
+        "name":user.as_ref().unwrap().user_first_name,
+        "picture":user.as_ref().unwrap().user_picture,
     })))
 }
