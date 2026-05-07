@@ -10,7 +10,7 @@ use serde_json;
 
 use crate::app::AppState;
 use crate::errors::ApiError;
-use crate::utils::jwt::generate_jwt;
+use crate::utils;
 
 #[derive(serde::Deserialize)]
 /// #### Googel Login Workflow
@@ -55,18 +55,43 @@ pub struct GoogleAuthRequest {
 ///   * Client stores token and uses:
 ///   * for all future requests
 /// ---
+/// # FUNCTION INTERNALS:
+///
+/// ATTRIBUTES:
+/// axum::Json(payload): axum::Json<GoogleAuthRequest> EXPLANATION:
+/// - we have struct GoogleAuthRequest and we taking axmu::Json(payload) provided by axum.
+/// - thsi deseralize the data intos GoogleAuthRequest struct.
+/// - Hence we can used "payload.token"
+/// - ⚠️ here the field name must match the struct name => "token"
+/// - ou use serde(rename) atrributes.
+///
+/// Same with State(state):
+/// - this defined in /app/app.rs inside
+/// - Router::new().route(...).with_state(state)
+///
+///
+/// ### Workflow:
+/// - User logs into Google -> Google creates signed ID token -> Frontend receives token -> Frontend sends token to YOUR backend
+/// - Your backend asks Google: "is this legit?"
+/// - Google validates signature internally ↓ Google responds with user info
+///
+/// #### Mislenouse:
+/// ```rust
+/// user.id.ok_or(ApiError::Internal)? // if we dont define 'id!:i64' it becames  Option<T,E>
+/// ```
 pub async fn google_auth(
     axum::extract::State(state): axum::extract::State<AppState>,
     axum::Json(payload): axum::Json<GoogleAuthRequest>,
-    // token {"token":"google_id_token"}
 ) -> Result<axum::Json<serde_json::Value>, ApiError> {
-    // resp(response)
-    // reqwest::get(&urs) -> asking google if this token ok?
-    // otherwise Unauthorised
+    // tooken change every request Hence we use format! to make url dynamic
     let url = format!("https://oauth2.googleapis.com/tokeninfo?id_token={}", payload.token);
-    let resp = reqwest::get(&url).await.map_err(|_| ApiError::Unauthorized)?;
-    // run the http request and convert the response into JSON... Y:
-    let body: serde_json::Value = resp.json().await.map_err(|_| ApiError::Unauthorized)?;
+
+    // ✨✨✨
+    // request::get() => returns Future + .await => Response
+    // then "Response" has the method .json()
+    // so we combine 2 tings here. we can seperate Response and body...
+    let body: serde_json::Value =
+        reqwest::get(&url).await.map_err(|_| ApiError::Unauthorized)?.json().await.map_err(|_| ApiError::Unauthorized)?;
 
     // FIELDS---------------------------
     let email = body["email"].as_str().unwrap_or("");
@@ -75,19 +100,29 @@ pub async fn google_auth(
     // ---------------------------------
 
     // IF exciting user.
-    let exsisting_user = sqlx::query!("SELECT user_id as 'id!:i64' FROM core_users WHERE user_email = ?", email)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|_| ApiError::Internal)?;
+    let exsisting_user = sqlx::query!(
+        r#"SELECT user_id as 'id!:i64'
+           FROM core_users
+           WHERE user_email = ? "#,
+        email
+    )
+    .fetch_optional(&state.db) // this fetch_optional handles "Not Found" Error type.
+    .await
+    .map_err(|_| ApiError::Internal)?; // Internal handles => (DB Crasn, syntx error, connection fail, curroption, timeout.)
 
     let user_id: i64 = if let Some(user) = exsisting_user {
-        // user.id.ok_or(ApiError::Internal)? if we dont define 'id!:i64' it becames  Option<T,E>
-        // then this used or we can use direct user.io.unwrap()
         user.id
     } else {
         let now = chrono::Utc::now().to_rfc3339();
+        // 💔  R: query! is micro, and we cannot assing the type explicetly to micros easily...
         let res = sqlx::query!(
-            r#"INSERT INTO core_users (user_email,user_first_name,user_picture,user_login_method,user_created_at) VALUES(?,?,?,'google',?)"#,
+            r#"
+            INSERT INTO core_users(
+                user_email,user_first_name,
+                user_picture,user_login_method,
+                user_created_at)
+            VALUES(?,?,?,'google',?)
+            "#,
             email,
             name,
             picture,
@@ -100,8 +135,8 @@ pub async fn google_auth(
         res.last_insert_rowid()
     };
 
-    // CREATE TOKEN...
-    let token = generate_jwt(user_id, email.to_string(), &state.config.jwt_secret);
+    // CREATE TOKEN... TY:
+    let token = utils::jwt::generate_jwt(user_id, email.to_string(), &state.config.jwt_secret);
 
     Ok(axum::Json(serde_json::json!({
         "token": token,
