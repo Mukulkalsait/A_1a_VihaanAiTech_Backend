@@ -5,7 +5,7 @@ use axum::{Router, routing};
 // EXT
 use crate::app::AppState;
 use crate::config;
-use crate::handlers::{create_user, google_auth, list_user, me, test};
+use crate::handlers::{create_user, google_auth, list_user, me, mobile_login, mobile_register, test};
 
 // INT
 
@@ -23,6 +23,8 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         // important
         .route("/auth/google", routing::post(google_auth::google_auth))
         .route("/me", routing::get(me))
+        .route("/auth/mobile/register", routing::post(mobile_register))
+        .route("/auth/mobile/login", routing::post(mobile_login))
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
         .route("/appx", routing::get(appx))
