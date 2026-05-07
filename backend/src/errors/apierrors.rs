@@ -16,7 +16,7 @@ struct ErrorResponse {
     error: String,
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
 /// Closed Set Of Error APIs.
 /// Varients => DIrect Http Mappings.
 /// ThisError => AutoDisplay.
