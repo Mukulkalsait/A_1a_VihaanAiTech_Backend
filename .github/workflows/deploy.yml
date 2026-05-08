@@ -56,7 +56,7 @@ jobs:
 
       - name: Build image
         run: |
-          docker build --pull -t $IMAGE_NAME_LOCAL:$IMAGE_TAG ./backend/Dockerfile
+          docker build --pull -t $IMAGE_NAME_LOCAL:$IMAGE_TAG ./backend/
 
       - name: Save image
         run: |
