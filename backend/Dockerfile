@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+ENV DATABASE_URL=sqlite:///app/database/dev.db
+COPY database ./database
+
 # Cargo build
 COPY . .
 RUN cargo build --release
