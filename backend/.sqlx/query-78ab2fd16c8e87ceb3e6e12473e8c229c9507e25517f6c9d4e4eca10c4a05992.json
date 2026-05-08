@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO core_users(\n                user_email,user_first_name,\n                user_picture,user_login_method,\n                user_created_at)\n            VALUES(?,?,?,'google',?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "78ab2fd16c8e87ceb3e6e12473e8c229c9507e25517f6c9d4e4eca10c4a05992"
+}

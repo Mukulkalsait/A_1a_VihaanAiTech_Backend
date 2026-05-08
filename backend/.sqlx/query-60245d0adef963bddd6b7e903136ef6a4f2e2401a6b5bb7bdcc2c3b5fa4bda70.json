@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT user_id as 'id!:i64'\n           FROM core_users\n           WHERE user_email = ? ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!:i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "60245d0adef963bddd6b7e903136ef6a4f2e2401a6b5bb7bdcc2c3b5fa4bda70"
+}
