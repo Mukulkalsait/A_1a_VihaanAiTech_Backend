@@ -1,0 +1,95 @@
+name: Vihaan_Ai_Website-Deploy  # toplevel Metedata : PIPELIEN DISPLAYNAME
+
+on:
+  push:
+    branches:
+      - main
+    # R: WHEN THIS PATHS CHANGED
+    # paths:
+    #   - "src/**"
+    #   - "Dockerfile"
+
+  # Y: TESTING BEFORE MERGE
+  # pull_request:
+  #   branches:
+  #     - main
+
+  # B: ON CLICK
+  # workflow_dispatch:
+  #   inpust:
+  #     environment:
+  #       requried: true
+
+  # IMP: ON SCHEDULE
+  # schedule:
+  #   - cron: "0 0 * * *"
+
+  # FUN_2:
+  # release:
+  #   type: [published]
+
+env:
+    # // Image Vars
+  IMAGE_NAME_HUB: "docker.io/mukuldk/vat_backend"
+  IMAGE_NAME_LOCAL: "localhost/vat_backend"
+  IMAGE_NAME: vat_backend
+  IMAGE_TAG: latest
+  ZIP_NAME: vat_backend
+  REMOTE_IMG_DIR: "/home/mukuldk/3_img"
+  COMPOSE_DIR: "/home/mukuldk/2_repo/000_backend"
+
+jobs:
+  # jobname: can be used in need: block if multyple jobs 
+  deploy_vihaan_website: 
+    runs-on: ubuntu-latest
+    # needs: test Y: needs block goes here.
+    
+    # Every STEPS have => 1. Action, 2. Shell Command FUN_3:
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check files
+        run: |
+          pwd
+          ls -altr
+
+      - name: Build image
+        run: |
+          docker build -t --no-cache $IMAGE_NAME_LOCAL:$IMAGE_TAG .
+
+      - name: Save image
+        run: |
+          docker save $IMAGE_NAME_LOCAL:$IMAGE_TAG | gzip > $ZIP_NAME.tar.gz
+          ls -lh
+
+      - name: Copy image to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "${{ env.ZIP_NAME }}.tar.gz"
+          target: "${{ env.REMOTE_IMG_DIR }}"
+
+      - name: Load and Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -eo pipefail
+
+            ZIP_NAME=vat_backend
+            REMOTE_IMG_DIR=/home/mukuldk/3_img
+            COMPOSE_DIR=/home/mukuldk/2_repo/000_backend
+
+            gunzip -c $REMOTE_IMG_DIR/$ZIP_NAME.tar.gz | podman load
+            rm -f $REMOTE_IMG_DIR/$ZIP_NAME.tar.gz
+
+            cd $COMPOSE_DIR
+            podman-compose down
+            podman-compose up -d
+
+            podman ps -a
