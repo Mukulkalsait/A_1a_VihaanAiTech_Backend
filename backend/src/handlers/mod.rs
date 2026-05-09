@@ -5,6 +5,7 @@ pub mod me_auth;
 pub mod mobile_auth;
 pub mod test;
 pub mod user;
+pub mod user_stractures;
 
 // Re-export
 pub use me_auth::me;
