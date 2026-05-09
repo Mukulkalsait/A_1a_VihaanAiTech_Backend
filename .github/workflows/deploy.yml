@@ -90,6 +90,7 @@ jobs:
 
             cd $COMPOSE_DIR
             podman-compose down
+            git pull
             podman-compose up -d
             podman image prune -af
 

@@ -24,6 +24,11 @@ pub struct GoogleAuthRequest {
     pub token: String,
 }
 
+#[derive(sqlx::FromRow)]
+pub struct ExcitingUser {
+    id: i64,
+}
+
 /// ## Step 1: Client sends Google token
 /// ```json => POST /auth/google
 /// { "token": "google_id_token" }
@@ -100,17 +105,18 @@ pub async fn google_auth(
     // ---------------------------------
 
     // IF exciting user.
-    let exsisting_user = sqlx::query!(
-        r#"SELECT user_id as 'id!:i64'
-           FROM core_users
-           WHERE user_email = ? "#,
-        email
+    let exsisting_user = sqlx::query_as::<_, ExcitingUser>(
+        r#"
+        SELECT user_id as id
+        FROM core_users
+        WHERE user_email = ?
+        "#,
     )
-    .fetch_optional(&state.db) // this fetch_optional handles "Not Found" Error type.
-    .await
-    .map_err(|_| ApiError::Internal)?; // Internal handles => (DB Crasn, syntx error, connection fail, curroption, timeout.)
+    .bind(email)
+    .fetch_optional(&state.db)
+    .await;
 
-    let user_id: i64 = if let Some(user) = exsisting_user {
+    let user_id: i64 = if let Some(user) = exsisting_user.unwrap() {
         user.id
     } else {
         let now = chrono::Utc::now().to_rfc3339();

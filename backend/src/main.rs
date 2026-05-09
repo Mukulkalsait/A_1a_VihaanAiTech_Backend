@@ -1,4 +1,5 @@
 // FILE: /src/main.rs
+use tracing_subscriber;
 
 mod app;
 mod config;
@@ -15,6 +16,9 @@ mod utils;
 /// resualt -> <Ok(), Err()> | But for generic type => (error? if yes type?)
 /// anyhow allow us to use ? early return. => give anyting to return as resualt.
 async fn main() -> anyhow::Result<()> {
+    // this allow to print tracing::info! /error! /warn! 🖲️
+    tracing_subscriber::fmt().with_env_filter("debug").init();
+
     let config = config::AppConfig::from_env()?; // dot env file
     let db = sqlx::sqlite::SqlitePoolOptions::new().max_connections(6).connect(&config.database_url).await?; // ACTUAL POOL CREATION WITH 6 connections.
     let app = app::build_app(config.clone(), db.clone());

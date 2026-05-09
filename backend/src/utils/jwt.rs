@@ -50,5 +50,8 @@ pub fn generate_jwt(user_id: i64, user_email: String, secret: &str) -> Result<St
 
     // encode-> create jwt string from data.
     // { "alg": "HS256", "typ": "JWT" }
-    encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref())).map_err(|_| ApiError::Internal)
+    encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref())).map_err(|e| {
+        tracing::error!("Failed to encode data from jwt: {}", e);
+        ApiError::Internal
+    })
 }
