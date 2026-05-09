@@ -36,7 +36,13 @@ pub struct CreateUser {
 ///
 fn password_hasher(passwd: String) -> Result<String, ApiError> {
     let created_salt = argon2::password_hash::SaltString::generate(&mut argon2::password_hash::rand_core::OsRng);
-    let hashed_password = Argon2::default().hash_password(passwd.as_bytes(), &created_salt).map_err(|_| ApiError::Internal)?.to_string();
+    let hashed_password = Argon2::default()
+        .hash_password(passwd.as_bytes(), &created_salt)
+        .map_err(|e| {
+            tracing::error!("Failed to Hashihg: {}", e);
+            ApiError::Internal
+        })?
+        .to_string();
     Ok(hashed_password)
 }
 
@@ -49,7 +55,7 @@ pub async fn create_user(
     // let new_id = uuid::Uuid::new_v4(); // impliment latger
     let hashed_password = password_hasher(payload.password)?;
 
-    sqlx::query!(
+    sqlx::query(
         r#"
         INSERT INTO core_users (
             user_email,
@@ -60,24 +66,23 @@ pub async fn create_user(
             user_dob,
             user_created_at
         )
-        VALUES(?,?,?,?,?,?,?)
+        VALUES (?,?,?, ?,?,?, ?)
         "#,
-        payload.email,
-        payload.first_name,
-        payload.last_name,
-        hashed_password,
-        payload.mobile,
-        payload.dob,
-        now
     )
+    .bind(&payload.email)
+    .bind(&payload.first_name)
+    .bind(&payload.last_name)
+    .bind(&hashed_password)
+    .bind(&payload.mobile)
+    .bind(&payload.dob)
+    .bind(&now)
     .execute(&state.db)
     .await
-    .map_err(|_| errors::ApiError::Internal)?;
+    .map_err(|e| {
+        tracing::error!("Failed to run db Query : {}", e);
+        ApiError::Internal
+    })?;
 
-    // billow the {...} is just plain string
-    // we convert it into
-    // 1.rust data => 2.then json => 3.then sent
-    // THERFORE this much Json(serde_json) and all used.
     Ok(Json(serde_json::json!({"status":"user created"})))
 }
 
@@ -102,7 +107,10 @@ pub async fn list_user(State(state): State<AppState>) -> Result<Json<serde_json:
     )
     .fetch_all(&state.db)
     .await
-    .map_err(|_| ApiError::Internal)?;
+    .map_err(|e| {
+        tracing::error!("Failed to execute Users query:{}", e);
+        ApiError::Internal
+    })?;
     Ok(Json(serde_json::json!(users)))
 }
 
