@@ -3,31 +3,14 @@
 // use anyhow;
 use axum;
 use reqwest;
-use serde;
 use serde_json;
 // use std::fmt::format;
 // EXT:
 
 use crate::app::AppState;
 use crate::errors::ApiError;
+use crate::handlers::user_stractures;
 use crate::utils;
-
-#[derive(serde::Deserialize)]
-/// #### Googel Login Workflow
-///
-/// - Frontend => Google Login Popup
-/// - Google returns ID Token => Rrontend sends token to backend => POST /auth/google
-/// - Backend verifies token with Google => Backend finds/creates user
-/// - Backend creates JWT => JWT returned to frontend => Frontend stores JWT
-/// - Future requests send JWT
-pub struct GoogleAuthRequest {
-    pub token: String,
-}
-
-#[derive(sqlx::FromRow)]
-pub struct ExcitingUser {
-    id: i64,
-}
 
 /// ## Step 1: Client sends Google token
 /// ```json => POST /auth/google
@@ -86,7 +69,7 @@ pub struct ExcitingUser {
 /// ```
 pub async fn google_auth(
     axum::extract::State(state): axum::extract::State<AppState>,
-    axum::Json(payload): axum::Json<GoogleAuthRequest>,
+    axum::Json(payload): axum::Json<user_stractures::GoogleAuthRequest>,
 ) -> Result<axum::Json<serde_json::Value>, ApiError> {
     // tooken change every request Hence we use format! to make url dynamic
     let url = format!("https://oauth2.googleapis.com/tokeninfo?id_token={}", payload.token);
@@ -95,8 +78,18 @@ pub async fn google_auth(
     // request::get() => returns Future + .await => Response
     // then "Response" has the method .json()
     // so we combine 2 tings here. we can seperate Response and body...
-    let body: serde_json::Value =
-        reqwest::get(&url).await.map_err(|_| ApiError::Unauthorized)?.json().await.map_err(|_| ApiError::Unauthorized)?;
+    let body: serde_json::Value = reqwest::get(&url)
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to get response from google: {}", e);
+            ApiError::Unauthorized
+        })?
+        .json()
+        .await
+        .map_err(|err| {
+            tracing::error!("Failed to convert user info from google => into .json:{}", err);
+            ApiError::Unauthorized
+        })?;
 
     // FIELDS---------------------------
     let email = body["email"].as_str().unwrap_or("");
@@ -105,7 +98,7 @@ pub async fn google_auth(
     // ---------------------------------
 
     // IF exciting user.
-    let exsisting_user = sqlx::query_as::<_, ExcitingUser>(
+    let exsisting_user = sqlx::query_as::<_, user_stractures::ExcitingUser>(
         r#"
         SELECT user_id as id
         FROM core_users
@@ -136,7 +129,10 @@ pub async fn google_auth(
         )
         .execute(&state.db)
         .await
-        .map_err(|_| ApiError::Internal)?;
+        .map_err(|e| {
+            tracing::error!("Failed to execute query:{}", e);
+            ApiError::Internal
+        })?;
 
         res.last_insert_rowid()
     };
