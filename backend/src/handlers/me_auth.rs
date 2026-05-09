@@ -1,6 +1,6 @@
 // FILE: ./src/headers/me_auth.rs
 
-use crate::{app, errors::ApiError};
+use crate::{app, errors::ApiError, handlers::user_stractures};
 use axum;
 use serde_json;
 
@@ -45,31 +45,37 @@ pub async fn me(
         &jsonwebtoken::DecodingKey::from_secret(state.config.jwt_secret.as_ref()), // Appstate->AppConfig->jwt_secret
         &jsonwebtoken::Validation::default(),                                      // default validation
     )
-    .map_err(|_| ApiError::Unauthorized)?;
+    .map_err(|e| {
+        tracing::error!("Failed to decode the jsonwebtoken: {}", e);
+        ApiError::Unauthorized
+    })?;
     // 4. Fetch User.
     let user_id = decoded.claims.sub; // sub => who this token billongs to. Y: sub= user.id
-    let user = sqlx::query!(
+
+    let user = sqlx::query_as::<_, user_stractures::ExcitingUser>(
         r#"
-        SELECT 
-            user_id as "id!: i64",
-            user_email,
-            user_first_name,
-            user_picture
+            SELECT
+                user_id as id,
+                user_email,
+                user_first_name,
+                user_picture
             FROM core_users
             WHERE user_id = ?
         "#,
-        user_id
     )
+    .bind(user_id)
     .fetch_optional(&state.db)
     .await
-    .map_err(|_| ApiError::Internal)?;
-
-    let user = user.ok_or(ApiError::Unauthorized);
+    .map_err(|e| {
+        tracing::error!("Failed to run query: {} ", e);
+        ApiError::Internal
+    })?
+    .ok_or(ApiError::Unauthorized)?;
 
     Ok(axum::Json(serde_json::json!({
-        "id":user.as_ref().unwrap().id,
-        "email":user.as_ref().unwrap().user_email,
-        "name":user.as_ref().unwrap().user_first_name,
-        "picture":user.as_ref().unwrap().user_picture,
+        "id":user.id,
+        "email":user.user_email,
+        "name":user.user_first_name,
+        "picture":user.user_picture,
     })))
 }
