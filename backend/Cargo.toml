@@ -25,7 +25,7 @@ jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
 # LT: Loging-Debuging
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-tower-http = "0.6.10"
+tower-http = { version = "0.6.10", features = ["trace"] }
 
 # R: Error Handling
 anyhow = "1.0.102" # gives anyhow to use " ?" early catching error
