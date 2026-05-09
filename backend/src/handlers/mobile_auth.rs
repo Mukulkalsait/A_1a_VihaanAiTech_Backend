@@ -30,7 +30,10 @@ pub async fn mobile_register(
         .bind(&payload.mobile)
         .fetch_optional(&state.db)
         .await
-        .map_err(|_| ApiError::Internal)?;
+        .map_err(|e| {
+            tracing::error!("Exciting_user query failed: {}", e);
+            ApiError::Internal
+        })?;
 
     if existing.is_some() {
         return Err(ApiError::BadRequest("mobile number already registered".to_string()));
@@ -44,7 +47,10 @@ pub async fn mobile_register(
         .bind(&now)
         .execute(&state.db)
         .await
-        .map_err(|_| ApiError::Internal)?;
+        .map_err(|e| {
+            tracing::error!("Failed to get the user from Db:{}", e);
+            ApiError::Internal
+        })?;
 
     let user_id = res.last_insert_rowid();
 
@@ -81,7 +87,10 @@ pub async fn mobile_login(
         .bind(&payload.mobile)
         .fetch_optional(&state.db)
         .await
-        .map_err(|_| ApiError::Internal)?;
+        .map_err(|e| {
+            tracing::error!("Failed to get the user: {}", e);
+            ApiError::Internal
+        })?;
 
     let user = row.ok_or(ApiError::BadRequest("mobile number not registered".to_string()))?;
 
