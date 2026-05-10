@@ -98,7 +98,7 @@ pub async fn google_auth(
     // ---------------------------------
 
     // IF exciting user.
-    let exsisting_user = sqlx::query_as::<_, user_stractures::ExcitingUser>(
+    let exsisting_user = sqlx::query_as::<_, user_stractures::ExcitingUserID>(
         r#"
         SELECT user_id as id
         FROM core_users

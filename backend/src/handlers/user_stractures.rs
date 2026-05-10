@@ -17,3 +17,8 @@ pub struct ExcitingUser {
     pub user_first_name: String,
     pub user_picture: Option<String>,
 }
+
+#[derive(sqlx::FromRow)]
+pub struct ExcitingUserID {
+    pub id: i64,
+}
