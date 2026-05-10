@@ -23,6 +23,10 @@ async fn main() -> anyhow::Result<()> {
     let db = sqlx::sqlite::SqlitePoolOptions::new().max_connections(6).connect(&config.database_url).await?; // ACTUAL POOL CREATION WITH 6 connections.
     let app = app::build_app(config.clone(), db.clone());
 
+    // running db migrationss.
+    tracing::info!("Running database migrations...");
+    sqlx::migrate!().run(&db).await?;
+    tracing::info!("Database migrations complete.");
     // db::init::init_db(&db).await?; // create db... R: STOPED can removed
 
     let listener = tokio::net::TcpListener::bind(&config.server_addr).await?;
