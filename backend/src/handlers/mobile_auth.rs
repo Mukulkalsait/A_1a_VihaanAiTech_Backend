@@ -1,4 +1,5 @@
-// FILE:  /src/handlers/mobile_auth.re
+// FILE:  /src/handlers/mobile_auth.rs
+// Single unified `core_users` table for both Google and Mobile auth.
 
 use axum::{self, Json, extract::State};
 use serde;
@@ -25,13 +26,13 @@ pub async fn mobile_register(
         return Err(ApiError::BadRequest("name and mobile are required".to_string()));
     }
 
-    // Check if mobile already exists
-    let existing = sqlx::query_scalar::<_, i64>("SELECT id FROM mobile_users WHERE mobile = ?")
+    // Check if mobile already exists in core_users
+    let existing = sqlx::query_scalar::<_, i64>("SELECT user_id FROM core_users WHERE user_mobile = ?")
         .bind(&payload.mobile)
         .fetch_optional(&state.db)
         .await
         .map_err(|e| {
-            tracing::error!("Exciting_user query failed: {}", e);
+            tracing::error!("Existing user query failed: {}", e);
             ApiError::Internal
         })?;
 
@@ -39,23 +40,26 @@ pub async fn mobile_register(
         return Err(ApiError::BadRequest("mobile number already registered".to_string()));
     }
 
-    // Insert new mobile user
+    // Insert new user into core_users
     let now = chrono::Utc::now().to_rfc3339();
-    let res = sqlx::query("INSERT INTO mobile_users (name, mobile, created_at) VALUES (?, ?, ?)")
-        .bind(&payload.name)
-        .bind(&payload.mobile)
-        .bind(&now)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to get the user from Db:{}", e);
-            ApiError::Internal
-        })?;
+    let res = sqlx::query(
+        r#"INSERT INTO core_users (user_first_name, user_mobile, user_login_method, user_created_at)
+           VALUES (?, ?, 'mobile', ?)"#,
+    )
+    .bind(&payload.name)
+    .bind(&payload.mobile)
+    .bind(&now)
+    .execute(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to insert user: {}", e);
+        ApiError::Internal
+    })?;
 
     let user_id = res.last_insert_rowid();
 
     // Generate JWT
-    let token = generate_jwt(user_id, payload.mobile.clone(), &state.config.jwt_secret);
+    let token = generate_jwt(user_id, payload.mobile.clone(), &state.config.jwt_secret)?;
 
     Ok(Json(serde_json::json!({
         "token": token,
@@ -82,20 +86,22 @@ pub async fn mobile_login(
         return Err(ApiError::BadRequest("mobile is required".to_string()));
     }
 
-    // Find user by mobile
-    let row = sqlx::query_as::<_, MobileUser>("SELECT id, name, mobile FROM mobile_users WHERE mobile = ?")
-        .bind(&payload.mobile)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to get the user: {}", e);
-            ApiError::Internal
-        })?;
+    // Find user by mobile in core_users
+    let row = sqlx::query_as::<_, MobileUser>(
+        "SELECT user_id as id, user_first_name as name, user_mobile as mobile FROM core_users WHERE user_mobile = ?",
+    )
+    .bind(&payload.mobile)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to get the user: {}", e);
+        ApiError::Internal
+    })?;
 
     let user = row.ok_or(ApiError::BadRequest("mobile number not registered".to_string()))?;
 
     // Generate JWT
-    let token = generate_jwt(user.id, user.mobile.clone(), &state.config.jwt_secret);
+    let token = generate_jwt(user.id, user.mobile.clone(), &state.config.jwt_secret)?;
 
     Ok(Json(serde_json::json!({
         "token": token,
