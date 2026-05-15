@@ -36,7 +36,7 @@ env:
   IMAGE_TAG: latest
   ZIP_NAME: vat_backend
   REMOTE_IMG_DIR: "/home/mukuldk/3_img"
-  COMPOSE_DIR: "/home/mukuldk/2_repo/000_backend"
+  COMPOSE_DIR: "/home/mukuldk/0_Repo_container_management/000_backend"
 
 jobs:
   # jobname: can be used in need: block if multyple jobs 
@@ -83,7 +83,7 @@ jobs:
 
             ZIP_NAME=vat_backend
             REMOTE_IMG_DIR=/home/mukuldk/3_img
-            COMPOSE_DIR=/home/mukuldk/2_repo/000_backend
+            COMPOSE_DIR=/home/mukuldk/0_Repo_container_management/000_backend
 
             gunzip -c $REMOTE_IMG_DIR/$ZIP_NAME.tar.gz | podman load
             rm -f $REMOTE_IMG_DIR/$ZIP_NAME.tar.gz
