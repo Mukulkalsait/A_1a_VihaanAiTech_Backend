@@ -10,7 +10,7 @@ pub struct GoogleAuthRequest {
     pub token: String,
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, serde::Serialize)]
 pub struct ExcitingUser {
     pub id: i64,
     pub user_email: String,

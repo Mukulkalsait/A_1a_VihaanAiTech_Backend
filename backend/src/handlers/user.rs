@@ -6,6 +6,7 @@ use argon2::{
 };
 use axum::{self, Json, extract::State};
 use serde;
+use sqlx::query;
 //EXT
 use crate::app::AppState;
 use crate::errors::{self, ApiError};
@@ -87,31 +88,31 @@ pub async fn create_user(
 }
 
 // ---------------------------------------------------------------------------------
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, sqlx::FromRow)]
 pub struct User {
     pub id: i64,
     pub first_name: String,
     pub email: String,
 }
 
-pub async fn list_user(State(state): State<AppState>) -> Result<Json<serde_json::Value>, errors::ApiError> {
-    let users = sqlx::query_as!(
-        User,
+pub async fn list_user(State(state): State<AppState>) -> Result<Json<Vec<User>>, errors::ApiError> {
+    let users = sqlx::query_as::<_, User>(
         r#"
-        SELECT
-            user_id as "id!: i64",
-            user_first_name as first_name,
-            user_email as email
-        FROM core_users
-        "#
+            SELECT
+                user_id as "id!: i64",
+                user_first_name as first_name,
+                user_email as email
+            FROM core_users
+        "#,
     )
     .fetch_all(&state.db)
     .await
     .map_err(|e| {
-        tracing::error!("Failed to execute Users query:{}", e);
+        tracing::error!("Failed to reun db query: {}", e);
         ApiError::Internal
     })?;
-    Ok(Json(serde_json::json!(users)))
+
+    Ok(Json(users))
 }
 
 // ---------------------------------------------------------------------------------
