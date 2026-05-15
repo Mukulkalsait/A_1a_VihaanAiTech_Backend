@@ -99,7 +99,7 @@ pub async fn list_user(State(state): State<AppState>) -> Result<Json<Vec<User>>,
     let users = sqlx::query_as::<_, User>(
         r#"
             SELECT
-                user_id as "id!: i64",
+                user_id as id,
                 user_first_name as first_name,
                 user_email as email
             FROM core_users
