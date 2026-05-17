@@ -72,34 +72,27 @@ pub async fn google_auth(
     axum::Json(payload): axum::Json<user_stractures::GoogleAuthRequest>,
 ) -> Result<axum::Json<serde_json::Value>, ApiError> {
     // tooken change every request Hence we use format! to make url dynamic
-    // let url = format!("https://oauth2.googleapis.com/tokeninfo?id_token={}", payload.token);
+    let url = format!("https://oauth2.googleapis.com/tokeninfo?id_token={}", payload.token);
+    // let url = format!("https://www.googleapis.com/oauth2/v3/userinfo{}", payload.token);
 
     // ✨✨✨
     // request::get() => returns Future + .await => Response
     // then "Response" has the method .json()
     // so we combine 2 tings here. we can seperate Response and body...
-    // let body: serde_json::Value = reqwest::get(&url).await.map_err(|e| { tracing::error!("failed to get response from google: {}", e); ApiError::Unauthorized })?.json().await.map_err(|err| { tracing::error!("Failed to convert user info from google => into .json:{}", err); ApiError::Unauthorized })?; // FIELDS---------------------------
+    let body: serde_json::Value = reqwest::get(&url)
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to get response from google: {}", e);
+            ApiError::Unauthorized
+        })?
+        .json()
+        .await
+        .map_err(|err| {
+            tracing::error!("Failed to convert user info from google => into .json:{}", err);
+            ApiError::Unauthorized
+        })?;
 
-    let client = reqwest::Client::new();
-
-    let url = format!("https://www.googleapis.com/oauth2/v3/userinfo");
-    let response = client.get(url).bearer_auth(&payload.token).send().await.map_err(|e| {
-        tracing::error!("Falied to connect to Google: {}", e);
-        ApiError::Unauthorized
-    })?;
-
-    if !response.status().is_success() {
-        tracing::error!("Google Token Regected.");
-        return Err(ApiError::Unauthorized);
-    }
-
-    let body: serde_json::Value = response.json().await.map_err(|e| {
-        tracing::error!("Failed to parse google user info at google_auth: {}", e);
-        ApiError::Unauthorized
-    })?;
-
-    tracing::debug!("Googel user info: {:?}", body);
-
+    // FIELDS---------------------------
     let email = body["email"].as_str().unwrap_or("");
     let name = body["name"].as_str().unwrap_or("");
     let picture = body["picture"].as_str().unwrap_or("");
@@ -122,27 +115,23 @@ pub async fn google_auth(
     } else {
         let now = chrono::Utc::now().to_rfc3339();
         // 💔  R: query! is micro, and we cannot assing the type explicetly to micros easily...
-
-        let res = sqlx::query(
+        let res = sqlx::query!(
             r#"
             INSERT INTO core_users(
-                user_email,
-                user_first_name,
-                user_picture,
-                user_login_method,
-                user_created_at
-            )
-            VALUES (?, ?, ?, 'google', ?)
+                user_email,user_first_name,
+                user_picture,user_login_method,
+                user_created_at)
+            VALUES(?,?,?,'google',?)
             "#,
+            email,
+            name,
+            picture,
+            now
         )
-        .bind(email)
-        .bind(name)
-        .bind(picture)
-        .bind(now)
         .execute(&state.db)
         .await
         .map_err(|e| {
-            tracing::error!("Failed to execute query: {}", e);
+            tracing::error!("Failed to execute query:{}", e);
             ApiError::Internal
         })?;
 
@@ -150,7 +139,7 @@ pub async fn google_auth(
     };
 
     // CREATE TOKEN... TY:
-    let token = utils::jwt::generate_jwt(user_id, email.to_string(), &state.config.jwt_secret)?;
+    let token = utils::jwt::generate_jwt(user_id, email.to_string(), &state.config.jwt_secret);
 
     Ok(axum::Json(serde_json::json!({
         "token": token,
