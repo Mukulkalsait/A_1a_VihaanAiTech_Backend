@@ -1,5 +1,5 @@
 /// FILE: /src/utils/jwt.rs
-use jsonwebtoken::{EncodingKey, Header, encode};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use serde;
 
 use crate::errors::ApiError;
@@ -15,9 +15,7 @@ pub struct Claims {
 }
 
 impl Claims {
-    pub fn new(id: i64, user_email: String, expiration_time: usize) -> Self {
-        Claims { sub: id, email: user_email, exp: expiration_time }
-    }
+    pub fn new(id: i64, user_email: String, expiration_time: usize) -> Self { Claims { sub: id, email: user_email, exp: expiration_time } }
 }
 
 /// # JWT (Very similar to SSH private signing key conceptually)

@@ -9,8 +9,8 @@
     user_last_name TEXT NOT NULL,
     user_mobile TEXT ,
     user_dob TEXT,
-    user_email TEXT NOT NULL UNIQUE,
 
+    user_email TEXT NOT NULL UNIQUE,
     user_verified INTEGER NOT NULL DEFAULT 0,
     user_password TEXT,
 
@@ -19,7 +19,6 @@
 
     user_verification_token TEXT,
     user_token_expires_at TEXT,
-
     user_role TEXT NOT NULL DEFAULT 'user' CHECK (user_role IN ('admin', 'user')),
 
     user_created_at TEXT DEFAULT CURRENT_TIMESTAMP, 

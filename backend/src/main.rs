@@ -1,5 +1,4 @@
 // FILE: /src/main.rs
-use tracing_subscriber;
 
 mod app;
 mod config;
@@ -7,6 +6,7 @@ mod config;
 mod db;
 mod errors;
 mod handlers;
+mod modals;
 mod utils;
 // INT---------------------
 
@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     // await suspends the current async task until the awaited future makes progress
     // Y: await : So the function is paused till OS binds the port.
 
-    println!("⚡ VAT on {}", &config.server_addr);
+    println!("⚡ VAT on {}", config.server_addr);
     axum::serve(listener, app.into_make_service()).await?;
 
     Ok(())

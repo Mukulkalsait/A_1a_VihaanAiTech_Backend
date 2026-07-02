@@ -1,12 +1,13 @@
 // FILE: ./src/app/app.rs
 
-use axum::{Router, routing};
+use axum::{Router, routing, routing::{post, get, delete}};
 use tower_http::cors::{Any, CorsLayer};
 
 // EXT
 use crate::app::AppState;
 use crate::config;
-use crate::handlers::{create_user, google_auth, list_user, me, mobile_login, mobile_register, test};
+use crate::handlers::workshop::open_workshop_handler::*;
+use crate::handlers::{create_user, login_handler::google_auth, list_user, me, mobile_login, mobile_register, fail};
 
 // INT
 
@@ -23,7 +24,7 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
     Router::new()
-        .route("/home", routing::get(homepageurl))
+        // .route("/home", routing::get(homepageurl)) R: exaple of home
         // important
         .route("/auth/google", routing::post(google_auth::google_auth))
         .route("/me", routing::get(me))
@@ -31,16 +32,20 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         .route("/auth/phone-login", routing::post(mobile_login))
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
-        .route("/appx", routing::get(appx))
+        .route("/open-workshop/register", post(register_open_workshop))
+        .route("/open-workshop/registrations", get(list_registrations))     // ← get works now
+        .route("/open-workshop/registration/{id}", get(get_registration))
+        .route("/open-workshop/verify/{id}", post(verify_registration))
+        .route("/open-workshop/registration/{id}", delete(delete_registration))
         // fail
-        .route("/fail", routing::get(test::fail))
+        .route("/fail", routing::get(fail::fail))
         .layer(cors)
         .with_state(state)
 }
 
-async fn homepageurl() -> &'static str {
-    "<html><h1>Welcome to homepage</h1></html>"
+async fn _homepageurl() -> &'static str {
+    "Welcome to homepage"
 }
-async fn appx() -> &'static str {
+async fn _appx() -> &'static str {
     "appx"
 }

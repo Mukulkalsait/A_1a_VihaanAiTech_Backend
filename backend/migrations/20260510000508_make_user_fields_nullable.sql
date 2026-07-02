@@ -12,8 +12,8 @@ CREATE TABLE core_users_new (
 
     user_email TEXT NOT NULL UNIQUE,
     user_verified INTEGER NOT NULL DEFAULT 0,
-
     user_password TEXT,
+
     user_picture TEXT,
     user_login_method TEXT,
 

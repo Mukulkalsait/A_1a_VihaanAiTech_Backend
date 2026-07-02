@@ -1,14 +1,13 @@
 // FILE: /src/handlers/mod.rs
 
-pub mod google_auth;
-pub mod me_auth;
-pub mod mobile_auth;
-pub mod test;
-pub mod user;
-pub mod user_stractures;
+pub mod login_handler;
+pub mod users;
+pub mod workshop;
+
+pub mod fail;
 
 // Re-export
-pub use me_auth::me;
-pub use mobile_auth::{mobile_login, mobile_register};
-pub use user::create_user;
-pub use user::list_user;
+pub use login_handler::me_auth::me;
+pub use login_handler::mobile_auth::{mobile_login, mobile_register};
+pub use users::user::create_user;
+pub use users::user::list_user;

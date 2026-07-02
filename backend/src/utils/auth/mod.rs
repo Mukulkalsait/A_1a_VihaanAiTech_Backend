@@ -1,8 +1,16 @@
-// FILE: ./src/headers/me_auth.rs
+use axum::http::HeaderMap;
+use serde::{Deserialize, Serialize};
+use crate::{app::AppState, errors::ApiError, modals::users_mod};
+use jsonwebtoken;
 
-use crate::{app, errors::ApiError, handlers::user_stractures};
-use axum;
-use serde_json;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthenticatedUser{
+    pub user_id: i64, 
+    pub user_email: String, 
+    pub user_first_name: String,
+    pub user_picture: Option<String>,
+}
+
 
 /// ## Step 1: Client sends request
 /// ```http GET /me
@@ -31,51 +39,34 @@ use serde_json;
 ///  - Signature => proof out backend created thsi tooken.
 ///  - this is created by that EncodingKey::from_secret(...) in [jwt.rs](../utils/jwt.rs) file.
 ///
-pub async fn me(
-    axum::extract::State(state): axum::extract::State<app::AppState>,
-    headers: axum::http::HeaderMap,
-) -> Result<axum::Json<serde_json::Value>, ApiError> {
-    // 1. Get auth error
+pub async fn get_authenticated_user(headers:&HeaderMap, state:&AppState)-> Result<AuthenticatedUser, ApiError>{
     let auth_header = headers.get("authorization").and_then(|h| h.to_str().ok()).ok_or(ApiError::Unauthorized)?;
-    // 2. Extract Token
     let token = auth_header.strip_prefix("Bearer ").ok_or(ApiError::Unauthorized)?;
-    // 3. Decode JWT SERDE DECODIGN TECHNIWUE <TURBO FISH>
+
     let decoded = jsonwebtoken::decode::<crate::utils::jwt::Claims>(
         token,
-        &jsonwebtoken::DecodingKey::from_secret(state.config.jwt_secret.as_ref()), // Appstate->AppConfig->jwt_secret
-        &jsonwebtoken::Validation::default(),                                      // default validation
-    )
-    .map_err(|e| {
-        tracing::error!("Failed to decode the jsonwebtoken: {}", e);
-        ApiError::Unauthorized
-    })?;
-    // 4. Fetch User.
-    let user_id = decoded.claims.sub; // sub => who this token billongs to. Y: sub= user.id
+        &jsonwebtoken::DecodingKey::from_secret(state.config.jwt_secret.as_ref()), // AppState>AppConfig>jwt secret
+        &jsonwebtoken::Validation::default(),
+    ).map_err(|e| { tracing::error!("Faild to decode the jsonwebtoken: {}",e); ApiError::Unauthorized })?;
 
-    let user = sqlx::query_as::<_, user_stractures::ExcitingUser>(
+    let user_id = decoded.claims.sub; // sub (subject) => who this token billongs ot: SUB=>user.id 
+    let user = sqlx::query_as::<_,users_mod::ExcitingUser>(
         r#"
-            SELECT
+            SELECT 
                 user_id as id,
                 user_email,
                 user_first_name,
                 user_picture
             FROM core_users
-            WHERE user_id = ?
+            WHERE user_id = ? 
         "#,
-    )
-    .bind(user_id)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(|e| {
-        tracing::error!("Failed to run query: {} ", e);
-        ApiError::Internal
-    })?
-    .ok_or(ApiError::Unauthorized)?;
+    ).bind(user_id).fetch_optional(&state.db).await.map_err(|e| {tracing::error!("Faild to run query :{}",e); ApiError::Internal })?.ok_or(ApiError::Unauthorized)?;
 
-    Ok(axum::Json(serde_json::json!({
-        "id":user.id,
-        "email":user.user_email,
-        "name":user.user_first_name,
-        "picture":user.user_picture,
-    })))
+    Ok(AuthenticatedUser{
+        user_id: user.id,
+        user_email: user.user_email,
+        user_first_name: user.user_first_name,
+        user_picture: user.user_picture
+    })
+
 }

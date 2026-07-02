@@ -10,6 +10,7 @@ pub struct AppConfig {
     pub database_url: String,
     pub jwt_secret: String,
     pub jwt_max_age: String,
+    pub file_upload_path: String,
     pub smtp_server: String,
     pub smtp_port: String,
     pub smtp_username: String,
@@ -36,6 +37,7 @@ impl AppConfig {
 
         let jwt_secret = env::var("JWT_SECRET").map_err(|_| anyhow::anyhow!("JWT_SECRET not set."))?;
         let jwt_max_age = env::var("JWT_MAXAGE").map_err(|_| anyhow::anyhow!("JWT_MAXAGE not set."))?;
+        let file_upload_path = env::var("FILE_UPLOAD_PATH").map_err(|_| anyhow::anyhow!("file_upload_path not set."))?;
 
         let smtp_server = env::var("SMTP_SERVER").map_err(|_| anyhow::anyhow!("SMTP_SERVER not set."))?;
         let smtp_port = env::var("SMTP_PORT").map_err(|_| anyhow::anyhow!("SMTP_PORT not set."))?;
@@ -50,6 +52,7 @@ impl AppConfig {
             database_url,
             jwt_secret,
             jwt_max_age,
+            file_upload_path,
             smtp_server,
             smtp_port,
             smtp_username,

@@ -9,7 +9,7 @@ use serde_json;
 
 use crate::app::AppState;
 use crate::errors::ApiError;
-use crate::handlers::user_stractures;
+use crate::modals::users_mod;
 use crate::utils;
 
 /// ## Step 1: Client sends Google token
@@ -69,7 +69,7 @@ use crate::utils;
 /// ```
 pub async fn google_auth(
     axum::extract::State(state): axum::extract::State<AppState>,
-    axum::Json(payload): axum::Json<user_stractures::GoogleAuthRequest>,
+    axum::Json(payload): axum::Json<users_mod::GoogleAuthRequest>,
 ) -> Result<axum::Json<serde_json::Value>, ApiError> {
     // tooken change every request Hence we use format! to make url dynamic
     // let url = format!("https://oauth2.googleapis.com/tokeninfo?id_token={}", payload.token);
@@ -106,7 +106,7 @@ pub async fn google_auth(
     // ---------------------------------
 
     // IF exciting user.
-    let exsisting_user = sqlx::query_as::<_, user_stractures::ExcitingUserID>(
+    let exsisting_user = sqlx::query_as::<_, users_mod::ExcitingUserID>(
         r#"
         SELECT user_id as id
         FROM core_users

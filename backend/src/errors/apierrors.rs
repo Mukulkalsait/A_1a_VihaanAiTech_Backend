@@ -1,39 +1,13 @@
-// FILE: ./src/errors/apierrors.rs
-
 use axum;
 use serde;
 use thiserror;
-// EXT:
 
 #[derive(serde::Serialize)]
-/// ErrorResponse with serde:Serialize.
-/// * This gives Json Like SINGLE ERROR.
-/// ```json
-/// { error : "Message" }
-/// ```
-/// > ⚡SINGLE ERROR PER RESPONSE.
 struct ErrorResponse {
     error: String,
 }
 
 #[derive(Debug, thiserror::Error, serde::Serialize, serde::Deserialize)]
-/// Closed Set Of Error APIs.
-/// Varients => DIrect Http Mappings.
-/// ThisError => AutoDisplay.
-/// ``` rs
-/// # Implimentation of axum::response::IntoResponse{
-///  fn providing(self) -> returning axum::response::Response
-///  let (status,message) =  match self
-///   ApiError {all 5 options } =>
-///     returning
-///     axum::http::StatusCode::same_5_optiosn, ( self/message ).to_string.
-///
-///  let body = axum::Json(struct ErrorResponse{...});
-///
-///  (stats,body).into_response => Returning function.
-/// }
-/// ```
-///
 pub enum ApiError {
     #[error("unauthorized")]
     Unauthorized,
@@ -45,6 +19,8 @@ pub enum ApiError {
     BadRequest(String),
     #[error("internal server error")]
     Internal,
+    #[error("internal server error: {0}")] // ← NEW: Add this variant
+    InternalWithMessage(String),
 }
 
 impl axum::response::IntoResponse for ApiError {
@@ -55,6 +31,7 @@ impl axum::response::IntoResponse for ApiError {
             ApiError::NotFound => (axum::http::StatusCode::NOT_FOUND, self.to_string()),
             ApiError::BadRequest(msg) => (axum::http::StatusCode::BAD_REQUEST, msg),
             ApiError::Internal => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error".to_string()),
+            ApiError::InternalWithMessage(msg) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
         let body = axum::Json(ErrorResponse { error: message });
         (status, body).into_response()
