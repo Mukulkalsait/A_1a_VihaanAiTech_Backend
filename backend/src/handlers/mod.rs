@@ -7,6 +7,7 @@ pub mod workshop;
 pub mod fail;
 
 // Re-export
+pub use login_handler::email_auth::{email_login, email_register};
 pub use login_handler::me_auth::me;
 pub use login_handler::mobile_auth::{mobile_login, mobile_register};
 pub use users::user::create_user;

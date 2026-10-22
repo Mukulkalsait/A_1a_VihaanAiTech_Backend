@@ -28,8 +28,10 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         // important
         .route("/auth/google", routing::post(google_auth::google_auth))
         .route("/me", routing::get(me))
-        .route("/auth/register", routing::post(mobile_register))
+        .route("/auth/register-phone", routing::post(mobile_register))
+        .route("/auth/register-email", routing::post(mobile_register))
         .route("/auth/phone-login", routing::post(mobile_login))
+        .route("/auth/email-login", routing::post(mobile_login))
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
         .route("/open-workshop/register", post(register_open_workshop))

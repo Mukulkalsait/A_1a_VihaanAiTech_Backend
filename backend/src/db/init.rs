@@ -3,7 +3,6 @@
 use sqlx::{self, SqlitePool};
 // TAG: EXTERMAL ===============
 
-// use crate::app::app_state::AppState;
 
 pub async fn init_db(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
     let create_user_table_query = r#"CREATE TABLE IF NOT EXISTS core_users(
