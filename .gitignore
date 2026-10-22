@@ -17,6 +17,8 @@ target
 ./backend/.env*
 *.env*
 ./backend/db
+./backend/db/
+./backend/db/*
 
 
 # RustRover
