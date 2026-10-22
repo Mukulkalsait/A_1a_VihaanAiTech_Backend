@@ -27,13 +27,17 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         // .route("/home", routing::get(homepageurl)) R: exaple of home
         // important
         .route("/auth/google", routing::post(google_auth::google_auth))
-        .route("/me", routing::get(me))
+        .route("/me", routing::get(me))  
+
         .route("/auth/register-phone", routing::post(mobile_register))
-        .route("/auth/register-email", routing::post(email_register))
         .route("/auth/phone-login", routing::post(mobile_login))
+
+        .route("/auth/register-email", routing::post(email_register))
         .route("/auth/email-login", routing::post(email_login))
+
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
+
         .route("/open-workshop/register", post(register_open_workshop))
         .route("/open-workshop/registrations", get(list_registrations))     // ← get works now
         .route("/open-workshop/registration/{id}", get(get_registration))
