@@ -4,7 +4,7 @@ use axum::{Router, routing, routing::{post, get, delete}};
 use tower_http::cors::{Any, CorsLayer};
 
 // EXT
-use crate::app::AppState;
+use crate::{app::AppState, handlers::{email_login, email_register}};
 use crate::config;
 use crate::handlers::workshop::open_workshop_handler::*;
 use crate::handlers::{create_user, login_handler::google_auth, list_user, me, mobile_login, mobile_register, fail};
@@ -29,9 +29,9 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         .route("/auth/google", routing::post(google_auth::google_auth))
         .route("/me", routing::get(me))
         .route("/auth/register-phone", routing::post(mobile_register))
-        .route("/auth/register-email", routing::post(mobile_register))
+        .route("/auth/register-email", routing::post(email_register))
         .route("/auth/phone-login", routing::post(mobile_login))
-        .route("/auth/email-login", routing::post(mobile_login))
+        .route("/auth/email-login", routing::post(email_login))
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
         .route("/open-workshop/register", post(register_open_workshop))
