@@ -1,14 +1,10 @@
 // FILE: /src/main.rs
-
 mod app;
 mod config;
-// use crate::config::env::AppConfig;
-mod db;
 mod errors;
 mod handlers;
 mod modals;
 mod utils;
-// INT---------------------
 
 #[tokio::main]
 /// RUNTIME ENTRY.
@@ -23,11 +19,9 @@ async fn main() -> anyhow::Result<()> {
     let db = sqlx::sqlite::SqlitePoolOptions::new().max_connections(6).connect(&config.database_url).await?; // ACTUAL POOL CREATION WITH 6 connections.
     let app = app::build_app(config.clone(), db.clone());
 
-    // running db migrationss.
     tracing::info!("Running database migrations...");
-    sqlx::migrate!().run(&db).await?;
+    sqlx::migrate!().run(&db).await?; // Y: DB auto Migrations.
     tracing::info!("Database migrations complete.");
-    // db::init::init_db(&db).await?; // create db... R: STOPED can removed
 
     let listener = tokio::net::TcpListener::bind(&config.server_addr).await?;
     // await can ONLY used on something that might take time. eg. Network, socket, timers, file I/O
@@ -40,11 +34,3 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-//IMP:===============================| Info of Structs |=====================================================
-//
-// 1. AppConfig (config/env) | envFileDetails.
-// 2. AppState (config + db)
-// 3. ApiError (Errors )
-// 4. /db/init db_init() =>  db_query  + pool => sqlx::query().exicute(pool).await?
-// 5. GoogleAuth
-// 6. App::build_app () -> Router |  Router::new .... (AppState)
