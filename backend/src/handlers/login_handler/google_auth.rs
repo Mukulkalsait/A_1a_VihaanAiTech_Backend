@@ -4,13 +4,11 @@
 use axum;
 use reqwest;
 use serde_json;
+
 // use std::fmt::format;
 // EXT:
-
 use crate::app::AppState;
-use crate::errors::ApiError;
-use crate::modals::users_mod;
-use crate::utils;
+use crate::{errors::ApiError, modals::auth_modal::*, utils};
 
 /// ## Step 1: Client sends Google token
 /// ```json => POST /auth/google
@@ -67,10 +65,7 @@ use crate::utils;
 /// ```rust
 /// user.id.ok_or(ApiError::Internal)? // if we dont define 'id!:i64' it becames  Option<T,E>
 /// ```
-pub async fn google_auth(
-    axum::extract::State(state): axum::extract::State<AppState>,
-    axum::Json(payload): axum::Json<users_mod::GoogleAuthRequest>,
-) -> Result<axum::Json<serde_json::Value>, ApiError> {
+pub async fn google_auth(axum::extract::State(state): axum::extract::State<AppState>, axum::Json(payload): axum::Json<GoogleAuthRequest>) -> Result<axum::Json<serde_json::Value>, ApiError> {
     // tooken change every request Hence we use format! to make url dynamic
     // let url = format!("https://oauth2.googleapis.com/tokeninfo?id_token={}", payload.token);
 
@@ -81,8 +76,7 @@ pub async fn google_auth(
     // let body: serde_json::Value = reqwest::get(&url).await.map_err(|e| { tracing::error!("failed to get response from google: {}", e); ApiError::Unauthorized })?.json().await.map_err(|err| { tracing::error!("Failed to convert user info from google => into .json:{}", err); ApiError::Unauthorized })?; // FIELDS---------------------------
 
     let client = reqwest::Client::new();
-
-    let url = format!("https://www.googleapis.com/oauth2/v3/userinfo");
+    let url = "https://www.googleapis.com/oauth2/v3/userinfo";
     let response = client.get(url).bearer_auth(&payload.token).send().await.map_err(|e| {
         tracing::error!("Falied to connect to Google: {}", e);
         ApiError::Unauthorized
@@ -103,55 +97,30 @@ pub async fn google_auth(
     let email = body["email"].as_str().unwrap_or("");
     let name = body["name"].as_str().unwrap_or("");
     let picture = body["picture"].as_str().unwrap_or("");
-    // ---------------------------------
+    let exsisting_user = sqlx::query_as::<_, ExcitingUserID>(r#" SELECT user_id as id FROM core_users WHERE user_email = ? "#).bind(email).fetch_optional(&state.db).await;
 
-    // IF exciting user.
-    let exsisting_user = sqlx::query_as::<_, users_mod::ExcitingUserID>(
-        r#"
-        SELECT user_id as id
-        FROM core_users
-        WHERE user_email = ?
-        "#,
-    )
-    .bind(email)
-    .fetch_optional(&state.db)
-    .await;
-
-    let user_id: i64 = if let Some(user) = exsisting_user.unwrap() {
+    let user_id: uuid::Uuid = if let Some(user) = exsisting_user.unwrap() {
         user.id
     } else {
-        let now = chrono::Utc::now().to_rfc3339();
         // 💔  R: query! is micro, and we cannot assing the type explicetly to micros easily...
-
-        let res = sqlx::query(
-            r#"
-            INSERT INTO core_users(
-                user_email,
-                user_first_name,
-                user_picture,
-                user_login_method,
-                user_created_at
-            )
-            VALUES (?, ?, ?, 'google', ?)
-            "#,
-        )
-        .bind(email)
-        .bind(name)
-        .bind(picture)
-        .bind(now)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to execute query: {}", e);
-            ApiError::Internal
-        })?;
-
-        res.last_insert_rowid()
+        let now = chrono::Utc::now().to_rfc3339();
+        let user_id = uuid::Uuid::new_v4();
+        let _res = sqlx::query(r#" INSERT INTO core_users(user_id, user_email, user_first_name, user_picture, user_login_method, user_created_at) VALUES (?,?, ?, ?, 'google', ?) "#)
+            .bind(user_id)
+            .bind(email)
+            .bind(name)
+            .bind(picture)
+            .bind(now)
+            .execute(&state.db)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to execute query: {}", e);
+                ApiError::Internal
+            })?;
+        user_id
     };
 
-    // CREATE TOKEN... TY:
-    let token = utils::jwt::generate_jwt(user_id, email.to_string(), &state.config.jwt_secret)?;
-
+    let token = utils::json_web_token::generate_jwt(user_id, email.to_string(), &state.config.jwt_secret)?;
     Ok(axum::Json(serde_json::json!({
         "token": token,
         "user":{
