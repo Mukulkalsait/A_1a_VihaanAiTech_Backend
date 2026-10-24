@@ -1,4 +1,2 @@
 pub mod apierrors;
-
-// ReExport
-pub use apierrors::ApiError;
+pub use apierrors::ApiError; // ReExport
