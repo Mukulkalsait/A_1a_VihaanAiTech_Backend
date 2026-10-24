@@ -1,27 +1,14 @@
 // FILE: ./src/handlers/user.rs
-
-use argon2::{
-    Argon2, Error,
-    password_hash::{self, PasswordHasher, SaltString, rand_core::OsRng},
-};
+use argon2::{Argon2, password_hash::PasswordHasher};
 use axum::{self, Json, extract::State};
-use serde;
-use sqlx::query;
-//EXT
-use crate::app::AppState;
-use crate::errors::{self, ApiError};
-//INT
+
+use crate::{
+    app::AppState,
+    errors::{self, ApiError},
+    modals::users_mod::{CreateUser, User},
+};
 
 // ---------------------------------------------------------------------------------
-#[derive(serde::Deserialize, serde::Serialize)]
-pub struct CreateUser {
-    pub email: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub password: String,
-    pub mobile: Option<String>,
-    pub dob: Option<String>,
-}
 
 /// # Hashing Contains 2 tings,
 /// 1. Salt (Random Data Befroe Hashing)
@@ -48,28 +35,17 @@ fn password_hasher(passwd: String) -> Result<String, ApiError> {
 }
 
 /// # Creating User
-pub async fn create_user(
-    State(state): State<AppState>,
-    Json(payload): Json<CreateUser>,
-) -> Result<Json<serde_json::Value>, errors::ApiError> {
+pub async fn create_user(State(state): State<AppState>, Json(payload): Json<CreateUser>) -> Result<Json<serde_json::Value>, errors::ApiError> {
     let now = chrono::Utc::now().to_rfc3339(); // Time
-    // let new_id = uuid::Uuid::new_v4(); // impliment latger
+    let user_id = uuid::Uuid::new_v4(); // impliment latger
     let hashed_password = password_hasher(payload.password)?;
 
     sqlx::query(
-        r#"
-        INSERT INTO core_users (
-            user_email,
-            user_first_name,
-            user_last_name,
-            user_password,
-            user_mobile,
-            user_dob,
-            user_created_at
-        )
-        VALUES (?,?,?, ?,?,?, ?)
+        r#" INSERT INTO core_users ( user_id, user_email, user_first_name, user_last_name, user_password, user_mobile, user_dob, user_created_at)
+        VALUES (?,?,?,?,?,?,?, ?)
         "#,
     )
+    .bind(user_id)
     .bind(&payload.email)
     .bind(&payload.first_name)
     .bind(&payload.last_name)
@@ -88,58 +64,12 @@ pub async fn create_user(
 }
 
 // ---------------------------------------------------------------------------------
-#[derive(serde::Serialize, sqlx::FromRow)]
-pub struct User {
-    pub id: i64,
-    pub first_name: String,
-    pub email: String,
-}
 
 pub async fn list_user(State(state): State<AppState>) -> Result<Json<Vec<User>>, errors::ApiError> {
-    let users = sqlx::query_as::<_, User>(
-        r#"
-            SELECT
-                user_id as id,
-                user_first_name as first_name,
-                user_email as email
-            FROM core_users
-        "#,
-    )
-    .fetch_all(&state.db)
-    .await
-    .map_err(|e| {
+    let users = sqlx::query_as::<_, User>(r#" SELECT user_id as id, user_first_name as first_name, user_email as email FROM core_users "#).fetch_all(&state.db).await.map_err(|e| {
         tracing::error!("Failed to reun db query: {}", e);
         ApiError::Internal
     })?;
 
     Ok(Json(users))
 }
-
-// ---------------------------------------------------------------------------------
-pub struct UserResponse {
-    pub id: i64,
-    pub email: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub picture: Option<String>,
-    pub membership: String,
-}
-
-// IMP:
-// id TEXT PRIMARY KEY,
-// Y:
-// user_first_name TEXT NOT NULL,
-// user_last_name TEXT NOT NULL,
-// user_mobile TEXT ,
-// user_dob TEXT,
-// user_email TEXT,
-// B:
-// user_verified INTEGER NOT NULL DEFAULT 0,
-// user_password TEXT NOT NULL,
-// R:
-// user_verification_token TEXT,
-// user_token_expires_at TEXT,
-// G:
-// user_role TEXT NOT NULL DEFAULT 'user' CHECK (user_role IN ('admin', 'user')),
-// user_created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-// user_updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
