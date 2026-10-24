@@ -14,12 +14,12 @@ axum = { version = "0.8.9", features = ["http2", "macros", "ws", "multipart"] } 
 tokio = { version = "1.52.3", features = ["full"] } # WEB SERVER
 
 # Y:  Database
-sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio-rustls", "mysql", "chrono", "uuid"] }
+sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio-rustls", "uuid", "chrono", "macros", "migrate"] }
 
 # IMP: Authentication
 reqwest = { version = "0.13.4", features = ["json", "rustls"] } 
 argon2 = "0.5.3" # Password Hashing algo
-chrono = "0.4.45" # DateTime 
+chrono = { version = "0.4.45", features = ["serde"] } # DateTime 
 jsonwebtoken = { version = "10.4.0", features = ["rust_crypto"] } 
 
 # LT: Loging-Debuging
@@ -33,7 +33,7 @@ thiserror = "2.0.18" # Define Personalised Errors.
 
 # G: Tools 
 dotenvy = "0.15.7" # to load .env configfile
-uuid = { version = "1.23.2", features = ["v4"] } # Uniquie id generateor
+uuid = { version = "1.23.2", features = ["v4", "serde"] } # Uniquie id generateor
 serde = { version = "1.0.228", features = ["derive"] } # Serialization-DeSerialization
 serde_json = "1.0.150"
 
