@@ -1,17 +1,23 @@
 // FILE: ./src/app/app.rs
 
-use axum::{Router, routing, routing::{post, get, delete}};
+use axum::{
+    Router,
+    routing,
+    routing::{delete, get, post},
+};
 use tower_http::cors::{Any, CorsLayer};
 
 // EXT
-use crate::{app::AppState, handlers::{email_login, email_register}};
-use crate::config;
-use crate::handlers::workshop::open_workshop_handler::*;
-use crate::handlers::{create_user, login_handler::google_auth, list_user, me, mobile_login, mobile_register, fail};
+use crate::{
+    app::AppState,
+    handlers::{email_login, email_register},
+};
+use crate::{
+    config,
+    handlers::{create_user, fail, list_user, login_handler::google_auth, me, mobile_login, mobile_register, workshop::workshop_handler::*},
+};
 
-// INT
-
-/// IMP: Router::new()...route().with_state(state) => tells axum that
+/// #  Router::new()...route().with_state(state) => tells axum that
 /// Every request can access =>
 ///     - State(state): State<AppState> directly anywhere.
 ///     - even inside functions parameters.
@@ -24,34 +30,25 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
     Router::new()
-        // .route("/home", routing::get(homepageurl)) R: exaple of home
-        // important
         .route("/auth/google", routing::post(google_auth::google_auth))
-        .route("/me", routing::get(me))  
-
+        .route("/me", routing::get(me))
         .route("/auth/register-phone", routing::post(mobile_register))
         .route("/auth/phone-login", routing::post(mobile_login))
-
         .route("/auth/register-email", routing::post(email_register))
         .route("/auth/email-login", routing::post(email_login))
-
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
-
-        .route("/open-workshop/register", post(register_open_workshop))
-        .route("/open-workshop/registrations", get(list_registrations))     // ← get works now
+        // Workshops
+        .route("/open-workshop/registrations", get(list_registrations))
         .route("/open-workshop/registration/{id}", get(get_registration))
-        .route("/open-workshop/verify/{id}", post(verify_registration))
+        .route("/open-workshop/registration/{id}/verify", post(verify_registration))
         .route("/open-workshop/registration/{id}", delete(delete_registration))
+        .route("/open-workshop/register", post(register_workshop))
         // fail
         .route("/fail", routing::get(fail::fail))
         .layer(cors)
         .with_state(state)
 }
 
-async fn _homepageurl() -> &'static str {
-    "Welcome to homepage"
-}
-async fn _appx() -> &'static str {
-    "appx"
-}
+async fn _homepageurl() -> &'static str { "Welcome to homepage" }
+async fn _appx() -> &'static str { "appx" }
