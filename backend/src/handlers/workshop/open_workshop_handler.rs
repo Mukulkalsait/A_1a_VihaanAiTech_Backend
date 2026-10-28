@@ -62,15 +62,20 @@ pub async fn register_open_workshop(State(state): State<AppState>, mut multipart
     let bytes = screenshot_bytes.ok_or_else(|| ApiError::BadRequest("Payment Screenshot is Requried.".to_string()))?;
 
     // 3. Get Workshop from db
-    let workshop = sqlx::query_as::<_, Workshop>(r#"SELECT id, slug, name, description, date, amount, currency, capacity, status, created_at, updated_at FROM workshops Where slug = ?"#)
-        .bind(&slug)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("Faild to fetch workshop by Slug: {} from database:{}", slug, e);
-            ApiError::Internal
-        })?
-        .ok_or_else(|| ApiError::BadRequest(format!("Workshop not found-Slug:{}", slug)))?;
+    let workshop = sqlx::query_as::<_, Workshop>(
+        r#"SELECT 
+        id, slug, name, description, date, amount, currency, capacity, status, created_at, updated_at
+        time_label, timezone, whatsapp_group_url, whatsapp_qr_image_path, payment_qr_image_path, support_phone, support_whatsapp_url, terms_url, landing_tagline
+        FROM workshops Where slug = ?"#,
+    )
+    .bind(&slug)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Faild to fetch workshop by Slug: {} from database:{}", slug, e);
+        ApiError::Internal
+    })?
+    .ok_or_else(|| ApiError::BadRequest(format!("Workshop not found-Slug:{}", slug)))?;
 
     // 4. Status and capacity check. IMP: OPEN REG
     if workshop.status != "open" {
