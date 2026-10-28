@@ -7,14 +7,21 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 
-// EXT
 use crate::{
     app::AppState,
-    handlers::{email_login, email_register},
-};
-use crate::{
     config,
-    handlers::{create_user, fail, list_user, login_handler::google_auth, me, mobile_login, mobile_register, workshop::workshop_handler::*},
+    handlers::{
+        create_user,
+        email_login,
+        email_register,
+        fail,
+        list_user,
+        login_handler::google_auth,
+        me,
+        mobile_login,
+        mobile_register,
+        workshop::{open_workshop_handler::*, workshop_handler::*},
+    },
 };
 
 /// #  Router::new()...route().with_state(state) => tells axum that
@@ -30,6 +37,7 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
     Router::new()
+        // users and auth
         .route("/auth/google", routing::post(google_auth::google_auth))
         .route("/me", routing::get(me))
         .route("/auth/register-phone", routing::post(mobile_register))
@@ -38,14 +46,17 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         .route("/auth/email-login", routing::post(email_login))
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
-        // Workshops
-        .route("/open-workshop/registrations", get(list_registrations))
-        .route("/open-workshop/registration/{id}", get(get_registration))
-        .route("/open-workshop/registration/{id}/verify", post(verify_registration))
-        .route("/open-workshop/registration/{id}", delete(delete_registration))
-        .route("/open-workshop/register", post(register_workshop))
+        // Workshops All
+        .route("/workshops/{slug}", get(get_workshop_by_slug))
+        .route("/workshop/registrations", get(list_all_registrations))
+        .route("/workshop/registration/{id}", get(get_registration))
+        .route("/workshop/registration/{id}/verify", post(verify_registration))
+        .route("/workshop/registration/{id}", delete(delete_registration))
+        // Workshops that are open for registrations
+        .route("/open-workshop/register", post(register_open_workshop))
         // fail
         .route("/fail", routing::get(fail::fail))
+        .route("/forbiden", routing::get(fail::forbiden))
         .layer(cors)
         .with_state(state)
 }
