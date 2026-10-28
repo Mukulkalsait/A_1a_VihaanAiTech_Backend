@@ -42,3 +42,10 @@ pub struct WorkshopDetailsResponse {
     pub workshop: Workshop,
     pub badges: Vec<WorkshopBadge>,
 }
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct WorkshopListResponse {
+    pub success: bool,
+    pub number: u32,
+    pub workshops: Vec<Workshop>,
+}

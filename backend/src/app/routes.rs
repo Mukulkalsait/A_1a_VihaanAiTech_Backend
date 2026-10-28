@@ -20,7 +20,7 @@ use crate::{
         me,
         mobile_login,
         mobile_register,
-        workshop::{open_workshop_handler::*, workshop_handler::*},
+        workshop::{open_workshop_handler::*, workshop_handler::*, workshop_registrations_handler::*},
     },
 };
 
@@ -47,13 +47,15 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         .route("/users", routing::post(create_user))
         .route("/users", routing::get(list_user))
         // Workshops All
+        .route("/workshops", get(get_all_workshops))
         .route("/workshops/{slug}", get(get_workshop_by_slug))
+        // Workshops that are open for registrations
+        .route("/open-workshop/register", post(register_open_workshop))
+        // Workshop Registrations
         .route("/workshop/registrations", get(list_all_registrations))
         .route("/workshop/registration/{id}", get(get_registration))
         .route("/workshop/registration/{id}/verify", post(verify_registration))
         .route("/workshop/registration/{id}", delete(delete_registration))
-        // Workshops that are open for registrations
-        .route("/open-workshop/register", post(register_open_workshop))
         // fail
         .route("/fail", routing::get(fail::fail))
         .route("/forbiden", routing::get(fail::forbiden))
