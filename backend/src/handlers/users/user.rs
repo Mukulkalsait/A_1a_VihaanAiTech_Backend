@@ -6,6 +6,7 @@ use crate::{
     app::AppState,
     errors::{self, ApiError},
     modals::users_mod::{CreateUser, User},
+    utils,
 };
 
 // ---------------------------------------------------------------------------------
@@ -36,7 +37,7 @@ fn password_hasher(passwd: String) -> Result<String, ApiError> {
 
 /// # Creating User
 pub async fn create_user(State(state): State<AppState>, Json(payload): Json<CreateUser>) -> Result<Json<serde_json::Value>, errors::ApiError> {
-    let now = chrono::Utc::now().to_rfc3339(); // Time
+    let now = utils::helper::time_now_utc_string(); // Time
     let user_id = uuid::Uuid::new_v4(); // impliment latger
     let hashed_password = password_hasher(payload.password)?;
 
