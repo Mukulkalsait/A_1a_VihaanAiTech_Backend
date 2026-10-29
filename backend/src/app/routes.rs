@@ -11,6 +11,7 @@ use crate::{
     app::AppState,
     config,
     handlers::{
+        admin::*,
         create_user,
         email_login,
         email_register,
@@ -48,6 +49,7 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         .route("/users", routing::get(list_user))
         // Workshops All
         .route("/workshops", get(get_all_workshops))
+        .route("/admin/workshops", post(new_workshop))
         .route("/workshops/{slug}", get(get_workshop_by_slug))
         // Workshops that are open for registrations
         .route("/open-workshop/register", post(register_open_workshop))
@@ -59,6 +61,8 @@ pub fn build_app(config: config::AppConfig, db: sqlx::SqlitePool) -> axum::Route
         // fail
         .route("/fail", routing::get(fail::fail))
         .route("/forbiden", routing::get(fail::forbiden))
+        // admin
+        .route("/admin/whoami", routing::get(whoami)) // TEST:: testroute
         .layer(cors)
         .with_state(state)
 }

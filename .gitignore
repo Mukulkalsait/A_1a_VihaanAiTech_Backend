@@ -20,6 +20,8 @@ target
 ./backend/db/
 ./backend/db/*
 
+*.notes
+*.notes/*
 
 # RustRover
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
