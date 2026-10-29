@@ -64,7 +64,7 @@ pub async fn register_open_workshop(State(state): State<AppState>, mut multipart
     // 3. Get Workshop from db
     let workshop = sqlx::query_as::<_, Workshop>(
         r#"SELECT 
-        id, slug, name, description, date, amount, currency, capacity, status, created_at, updated_at
+        id, slug, name, description, date, amount, currency, capacity, status, created_at, updated_at,
         time_label, timezone, whatsapp_group_url, whatsapp_qr_image_path, payment_qr_image_path, support_phone, support_whatsapp_url, terms_url, landing_tagline
         FROM workshops Where slug = ?"#,
     )
@@ -78,17 +78,17 @@ pub async fn register_open_workshop(State(state): State<AppState>, mut multipart
     .ok_or_else(|| ApiError::BadRequest(format!("Workshop not found-Slug:{}", slug)))?;
 
     // 4. Status and capacity check. IMP: OPEN REG
-    if workshop.status != "open" {
-        return Err(ApiError::BadRequest(format!("Workshop {} is not open to registration [Status:{}]", slug, workshop.status)));
+    if !workshop.is_open() {
+        return Err(ApiError::BadRequest(format!("Workshop {} is not open to registration [Status:{:?}]", slug, workshop.status)));
     }
-    if let Some(cap) = workshop.capacity {
-        let current: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workshop_registrations WHERE workshop_id = ?").bind(workshop.id).fetch_one(&state.db).await.map_err(|e| {
-            tracing::error!("Faild to get the 'workshop_registrations' COUNT(*):{}", e);
-            ApiError::Internal
-        })?;
-        if current >= cap as i64 {
-            return Err(ApiError::BadRequest(format!("Workshop {} if full ({}/{})", slug, current, cap)));
-        }
+
+    let current: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM workshop_registrations WHERE workshop_id = ?").bind(workshop.id).fetch_one(&state.db).await.map_err(|e| {
+        tracing::error!("Failed to count registrations: {e}");
+        ApiError::Internal
+    })?;
+
+    if !workshop.has_capacity(current) {
+        return Err(ApiError::BadRequest(format!("Workshop '{}' is full ({}/{})", slug, current, workshop.capacity.unwrap_or(0))));
     }
 
     // 5.save screenshot
