@@ -1,4 +1,5 @@
 // FILE: /src/handlers/mod.rs
+pub mod admin;
 pub mod fail;
 pub mod login_handler;
 pub mod users;
