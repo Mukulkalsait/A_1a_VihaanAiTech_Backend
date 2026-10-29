@@ -1,5 +1,5 @@
 /// FILE: /src/utils/jwt.rs
-use jsonwebtoken::{EncodingKey, Header, encode};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 
 use crate::{
     errors::ApiError,
@@ -40,6 +40,15 @@ pub fn generate_jwt(user_id: UserID, user_email: String, secret: &str) -> Result
         tracing::error!("Failed to encode data from jwt: {}", e);
         ApiError::Internal
     })
+}
+
+/// Claims already has sub: UserID, email: String, exp: usize. Validation::default() checks exp automatically — good, expired tokens are rejected.
+pub fn verify_jwt(token: &str, secret: &str) -> Result<Claims, ApiError> {
+    let data = decode::<Claims>(token, &DecodingKey::from_secret(secret.as_ref()), &Validation::default()).map_err(|e| {
+        tracing::warn!("Token Verification Failed:{}", e);
+        ApiError::Unauthorized
+    })?;
+    Ok(data.claims)
 }
 
 impl Claims {

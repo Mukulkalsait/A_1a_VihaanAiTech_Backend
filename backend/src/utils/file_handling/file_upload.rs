@@ -17,7 +17,7 @@ pub async fn save_screenshot(bytes: axum::body::Bytes, _original_filename: &str,
     };
 
     // Generate unique filename
-    let timestamp = chrono::Utc::now().timestamp();
+    let timestamp = crate::utils::helper::time_now_utc_string();
     let filename = format!("screenshot_{}.{}", timestamp, extension);
     let full_path = upload_dir.join(&filename);
 
