@@ -103,7 +103,7 @@ pub async fn google_auth(axum::extract::State(state): axum::extract::State<AppSt
         user.id
     } else {
         // 💔  R: query! is micro, and we cannot assing the type explicetly to micros easily...
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = utils::helper::time_now_utc_string();
         let user_id = uuid::Uuid::new_v4();
         let _res = sqlx::query(r#" INSERT INTO core_users(user_id, user_email, user_first_name, user_picture, user_login_method, user_created_at) VALUES (?,?, ?, ?, 'google', ?) "#)
             .bind(user_id)

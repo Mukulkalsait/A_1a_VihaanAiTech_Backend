@@ -11,7 +11,7 @@ use crate::{
         registration_modals::{MobileLoginRequest, MobileRegisterRequest, MobileUser},
         users_mod::UserID,
     },
-    utils::json_web_token::generate_jwt,
+    utils::{self, json_web_token::generate_jwt},
 };
 
 // ---- Register: name + mobile ----
@@ -33,7 +33,7 @@ pub async fn mobile_register(State(state): State<AppState>, Json(payload): Json<
     }
 
     // Insert new user into core_users
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = utils::helper::time_now_utc_string();
     let user_id = uuid::Uuid::new_v4();
     let _res = sqlx::query(r#"INSERT INTO core_users (user_id, user_first_name, user_mobile, user_login_method, user_created_at) VALUES (?,?, ?, 'mobile', ?)"#)
         .bind(user_id)

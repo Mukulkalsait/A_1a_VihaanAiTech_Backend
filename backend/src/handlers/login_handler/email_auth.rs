@@ -7,7 +7,7 @@ use crate::{
     app::AppState,
     errors::ApiError,
     modals::registration_modals::{EmailLoginRequest, EmailRegisterRequest, EmailUser},
-    utils::json_web_token::generate_jwt,
+    utils::{self, json_web_token::generate_jwt},
 };
 
 pub async fn email_register(State(state): State<AppState>, Json(payload): Json<EmailRegisterRequest>) -> Result<Json<serde_json::Value>, ApiError> {
@@ -23,7 +23,7 @@ pub async fn email_register(State(state): State<AppState>, Json(payload): Json<E
         return Err(ApiError::BadRequest("Email already registered".to_string()));
     }
 
-    let now = chrono::Utc::now().to_rfc3339();
+    let now = utils::helper::time_now_utc_string();
     let user_id = uuid::Uuid::new_v4();
     let _res = sqlx::query(r#"INSERT INTO core_users (user_id, user_first_name, user_email,user_login_method, user_created_at) VALUES(?,?,?,'email',?)"#)
         .bind(user_id)
@@ -64,7 +64,7 @@ pub async fn email_login(State(state): State<AppState>, Json(payload): Json<Emai
         })?;
 
     let user = row.ok_or(ApiError::BadRequest("Email is not regustered".to_string()))?;
-    let token = generate_jwt(user.id, user.email.clone(), &state.config.jwt_secret);
+    let token = generate_jwt(user.id, user.email.clone(), &state.config.jwt_secret)?;
 
     Ok(Json(serde_json::json!({
     "token":token,
